@@ -76,7 +76,9 @@ def count_words_in_readme(commit_hash, script_path, repo_path):
     Returns:
     - str: The output of the counting script.
     """
-    # Run the counting script directly on the current repo state
+    # Ensure the script is run with the correct absolute path
+    script_path = os.path.abspath(script_path)
+    # Run the counting script directly on the current repo state (i.e., in the context of the commit)
     command = f"bash {script_path}"
     output, error = execute_shell_command(command, repo_path)
     if error:
