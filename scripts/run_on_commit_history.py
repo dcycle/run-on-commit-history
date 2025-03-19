@@ -7,18 +7,19 @@ from pathlib import Path
 import argparse
 
 # Function to execute shell commands and return the result
-def execute_shell_command(command):
+def execute_shell_command(command, working_dir=None):
     """
     Executes a shell command and returns the standard output and error output.
     
     Args:
     - command (str): The shell command to execute.
+    - working_dir (str, optional): Directory in which to run the command. Defaults to None.
     
     Returns:
     - tuple: A tuple containing the standard output and standard error output.
     """
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, cwd=working_dir)
         return result.stdout, result.stderr
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr
@@ -35,10 +36,8 @@ def get_commit_hashes(repo_path, max_commits):
     Returns:
     - list: A list of commit hashes.
     """
-    os.chdir(repo_path)  # Change working directory to the repository path
-    # Get all the commit hashes ordered by date (ascending), limited to max_commits
     command = f"git log --reverse --format='%H' -n {max_commits}"
-    output, error = execute_shell_command(command)
+    output, error = execute_shell_command(command, repo_path)
     if error:
         raise Exception(f"Error fetching commit hashes: {error}")
     return output.splitlines()
@@ -55,9 +54,8 @@ def get_commit_metadata(repo_path, commit_hash):
     Returns:
     - tuple: A tuple containing the commit date and commit message.
     """
-    os.chdir(repo_path)  # Change working directory to the repository path
     command = f"git show -s --format='%ci %s' {commit_hash}"
-    output, error = execute_shell_command(command)
+    output, error = execute_shell_command(command, repo_path)
     if error:
         raise Exception(f"Error fetching commit metadata for {commit_hash}: {error}")
     
@@ -68,7 +66,7 @@ def get_commit_metadata(repo_path, commit_hash):
 # Function to run the count words script on the README.md file for a specific commit
 def count_words_in_readme(commit_hash, script_path, repo_path):
     """
-    Checks out a specific commit and runs the given script on the README.md file.
+    Runs the given counting script on the README.md file in the repository at a specific commit.
     
     Args:
     - commit_hash (str): The commit hash to checkout.
@@ -78,16 +76,9 @@ def count_words_in_readme(commit_hash, script_path, repo_path):
     Returns:
     - str: The output of the counting script.
     """
-    os.chdir(repo_path)  # Change working directory to the repository path
-    # Checkout the specific commit
-    checkout_command = f"git checkout {commit_hash}"
-    _, error = execute_shell_command(checkout_command)
-    if error:
-        raise Exception(f"Error checking out commit {commit_hash}: {error}")
-    
-    # Run the counting script to count words in README.md
+    # Run the counting script directly on the current repo state
     command = f"bash {script_path}"
-    output, error = execute_shell_command(command)
+    output, error = execute_shell_command(command, repo_path)
     if error:
         raise Exception(f"Error running counting script on commit {commit_hash}: {error}")
     return output.strip()
