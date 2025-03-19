@@ -6,13 +6,6 @@
 
 ./scripts/run-on-commit-history.sh script processes the commit history of a Git repository, checks out each commit, and runs a specified script (e.g., `count-words-in-readme.sh`) to count the words in the `README.md` file. It then stores the output in individual `.txt` files and creates a `metadata.json` file with commit information.
 
-## Table of Contents
-- [Prerequisites](#prerequisites)
-- [Setup](#setup)
-- [Usage](#usage)
-- [Output](#output)
-- [License](#license)
-
 ## Prerequisites
 
 Before running the script, ensure you have the following installed:
