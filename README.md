@@ -73,7 +73,7 @@ Before running the script, ensure you have the following installed:
 
    ```bash
 
-    ./scripts/run-on-commit-history.sh  --script=./count-words-in-readme.sh --repo=./workspace --max-commits=3
+     ./scripts/run-on-commit-history.sh  --script=./scripts/count-words-in-readme.sh --repo=./starterkit-node --max-commits=3
 
    ```
 
@@ -86,7 +86,7 @@ Before running the script, ensure you have the following installed:
 If you have a `README.md` in your repository located at `./workspace` and the `count-words-in-readme.sh` script is in the same directory as `run_on_commit_history.py`, you would run:
 
 ```bash
-./scripts/run-on-commit-history.sh  --script=./count-words-in-readme.sh --repo=./srv/snamy/dp/de/starterkit-node/ --max-commits=3
+ ./scripts/run-on-commit-history.sh  --script=./scripts/count-words-in-readme.sh --repo=./starterkit-node --max-commits=3 
 ```
 
 ## Output
@@ -143,7 +143,7 @@ After running the script, the following output will be generated:
      165    1223   13675
      ```
 
-   If a commit does not contain a `README.md` file, an error message will be logged in the `.txt` file (e.g., `cat: README.md: No such file or directory`).
+   If a commit banch does not contain a `README.md` file, an error message will be logged in the `.txt` file (e.g., `cat: README.md: No such file or directory`).
 
 
 ```
