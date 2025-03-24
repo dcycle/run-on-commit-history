@@ -10,7 +10,7 @@ import argparse
 def execute_shell_command(command, working_dir=None):
     """
     Executes a shell command and returns the standard output and error output.
-    
+
     Args:
     - command (str): The shell command to execute.
     - working_dir (str, optional): Directory in which to run the command. Defaults to None.
@@ -58,7 +58,7 @@ def get_commit_metadata(repo_path, commit_hash):
     output, error = execute_shell_command(command, repo_path)
     if error:
         raise Exception(f"Error fetching commit metadata for {commit_hash}: {error}")
-    
+
     # Parse the commit output: "YYYY-MM-DD HH:MM:SS commit message"
     commit_date, commit_message = output.split(" ", 1)
     return commit_date, commit_message.strip()
@@ -67,7 +67,13 @@ def get_commit_metadata(repo_path, commit_hash):
 def count_words_in_readme(commit_hash, script_path, repo_path):
     """
     Runs the given counting script on the README.md file in the repository at a specific commit.
-    
+
+    In this method we are first trying to get current branch of repo.
+    Next we are switching to commit hash. Changes are made
+    to README.md in the in this commit hash are present if we switched to that
+    particular commit hash. Count the words in README.md file and revert back
+    to current branch which we got earlier.
+
     Args:
     - commit_hash (str): The commit hash to checkout.
     - script_path (str): The path to the counting script.
@@ -78,12 +84,45 @@ def count_words_in_readme(commit_hash, script_path, repo_path):
     """
     # Ensure the script is run with the correct absolute path
     script_path = os.path.abspath(script_path)
-    # Run the counting script directly on the current repo state (i.e., in the context of the commit)
-    command = f"bash {script_path}"
+
+    # Get the current branch before checking out to the commit hash
+    command = "git rev-parse --abbrev-ref HEAD"
+    current_branch, error = execute_shell_command(command, repo_path)
+    if error:
+        raise Exception(f"Error retrieving current branch: {error}")
+
+    # Checkout to the specified commit hash
+    command = f"git switch --detach {commit_hash} --quiet"
     output, error = execute_shell_command(command, repo_path)
     if error:
+        raise Exception(f"Error checking out commit {commit_hash}: {error}")
+
+    # Run the counting script directly on the current repo state (i.e., in the context of the commit)
+    command = f"bash {script_path}"
+    countoutput, error = execute_shell_command(command, repo_path)
+    if error:
+        checkout_from_detached_commit(current_branch, repo_path)
+        if error:
+            raise Exception(f"Error reverting back to original branch {current_branch.strip()}: {error}")
         raise Exception(f"Error running counting script on commit {commit_hash}: {error}")
-    return output.strip()
+
+    checkout_from_detached_commit(current_branch, repo_path)
+    return countoutput.strip()
+
+# Function to checkout to a current branch from detached HEAD state
+def checkout_from_detached_commit(current_branch, repo_path):
+    """
+    Checks out a current branch from a detached HEAD state.
+
+    Args:
+    - current_branch (str): The branch of a  the Git repository.
+    - commit_hash (str): The commit hash to checkout.
+    """
+    # Revert back to the original branch
+    command = f"git checkout {current_branch.strip()} --quiet"
+    output, error = execute_shell_command(command, repo_path)
+    if error:
+        raise Exception(f"Error reverting back to original branch {current_branch.strip()}: {error}")
 
 # Main function to execute the process of collecting commit history and word counts
 def run_on_commit_history(script, repo, max_commits):
@@ -143,7 +182,7 @@ def run_on_commit_history(script, repo, max_commits):
     with open(metadata_file_path, 'w') as f:
         json.dump(metadata, f, indent=4)
 
-    print("Process complete. Artefacts saved to 'artefacts' directory.")
+    print("**** Process complete. Artefacts saved to 'artefacts' directory. ***")
 
 # Command-line argument parsing
 if __name__ == "__main__":
