@@ -39,13 +39,11 @@ Before running the script, ensure you have the following installed:
 
 ## Setup
 
-1. Clone the Git repository you want to analyze or ensure it is already available locally.
+1. Clone the run-on-commit-history Git repository to your machine.
 
    ```bash
-   git clone <repository_url> ./workspace
+   git clone https://github.com/dcycle/run-on-commit-history.git
    ```
-
-   Replace `<repository_url>` with the actual URL of your Git repository.
 
 2. Make sure the `./scripts/count-words-in-readme.sh` script is available at the specified path, and is executable.
 
@@ -55,16 +53,7 @@ Before running the script, ensure you have the following installed:
 
 ## Usage
 
-1. **Clone the repository** .
-
-   If you haven't already, clone the repository to your local machine:
-
-   ```bash
-   git clone [<script_repository_url> ](https://github.com/dcycle/run-on-commit-history.git)
-   cd ./run-on-commit-history
-   ```
-
-2. **Clone the repository In which README count to calculated** .
+1. ** Clone the Git repository In which README count to be calculated** .
 
    clone the repository to your local machine inside run-on-commit-history to calculate wordcount in README.md:
 
@@ -99,7 +88,7 @@ If you have a `README.md` in your repository located at `./workspace` and the `c
 
 After running the script, the following output will be generated:
 
-1. **Artefacts Directory**: A directory called `artefacts` will be created in the same directory as the script.
+1. **Artefacts Directory**: A directory called `artefacts` will be created at root your project folders.
 
 2. **Metadata File (`metadata.json`)**: This file contains the metadata for each commit, including:
    - Commit hash
