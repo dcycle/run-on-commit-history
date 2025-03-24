@@ -1,9 +1,6 @@
 # Git Commit History Word Count Script
 ----
 
-```markdown
-# Git Commit History Word Count Script
-
 ./scripts/run-on-commit-history.sh script processes the commit history of a Git repository, checks out each commit, and runs a specified script (e.g., `count-words-in-readme.sh`) to count the words in the `README.md` file. It then stores the output in individual `.txt` files and creates a `metadata.json` file with commit information.
 
 ## Prerequisites
@@ -58,22 +55,31 @@ Before running the script, ensure you have the following installed:
 
 ## Usage
 
-1. **Clone the repository** for the script.
+1. **Clone the repository** .
 
-   If you haven't already, clone the repository for the script to your local machine:
+   If you haven't already, clone the repository to your local machine:
 
    ```bash
-   git clone <script_repository_url> ./script
-   cd ./script
+   git clone [<script_repository_url> ](https://github.com/dcycle/run-on-commit-history.git)
+   cd ./run-on-commit-history
    ```
 
-   Replace `<script_repository_url>` with the repository where the script resides.
+2. **Clone the repository In which README count to calculated** .
 
-2. **Execute the script** using the following command:
+   clone the repository to your local machine inside run-on-commit-history to calculate wordcount in README.md:
+
+   ```bash
+   git clone [<script_repository_url> ](https://github.com/dcycle/test.git) wokspace
+   cd ./run-on-commit-history
+   ```
+
+  Replace <script_repository_url>  with valid git repository url.
+    
+3. **Execute the script** using the following command:
 
    ```bash
 
-    ./scripts/run-on-commit-history.sh  --script=./count-words-in-readme.sh --repo=./workspace --max-commits=3
+     ./scripts/run-on-commit-history.sh  --script=./scripts/count-words-in-readme.sh --repo=./wokspace --max-commits=3
 
    ```
 
@@ -86,7 +92,7 @@ Before running the script, ensure you have the following installed:
 If you have a `README.md` in your repository located at `./workspace` and the `count-words-in-readme.sh` script is in the same directory as `run_on_commit_history.py`, you would run:
 
 ```bash
-./scripts/run-on-commit-history.sh  --script=./count-words-in-readme.sh --repo=./srv/snamy/dp/de/starterkit-node/ --max-commits=3
+ ./scripts/run-on-commit-history.sh  --script=./scripts/count-words-in-readme.sh --repo=./wokspace --max-commits=3 
 ```
 
 ## Output
@@ -143,7 +149,6 @@ After running the script, the following output will be generated:
      165    1223   13675
      ```
 
-   If a commit does not contain a `README.md` file, an error message will be logged in the `.txt` file (e.g., `cat: README.md: No such file or directory`).
+   If a commits does not contain a `README.md` file, an error message will be logged in the `.txt` file (e.g., `cat: README.md: No such file or directory`).
 
 
-```
