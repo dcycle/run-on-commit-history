@@ -225,10 +225,13 @@ def run_on_commit_history(script, repo, max_commits):
         # Run the word-counting script on the commit's README.md
         try:
             count_output = count_words_in_readme(commit_hash, script, repo_path)
-            errors = None  # No errors if the script runs successfully
+            # Initialize as an empty array if there are no errors
+            errors = []
         except Exception as e:
-            count_output = "cat: README.md: No such file or directory"  # Error message
-            errors = str(e)
+            count_output = "cat: README.md: No such file or directory"
+            # Error message
+            # Store the error in a list
+            errors = [str(e)]
 
         # Store commit metadata (including any errors encountered)
         metadata["commits"][commit_hash] = {
