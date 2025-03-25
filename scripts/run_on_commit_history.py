@@ -24,23 +24,78 @@ def execute_shell_command(command, working_dir=None):
     except subprocess.CalledProcessError as e:
         return e.stdout, e.stderr
 
-# Function to get commit hashes from the git history
 def get_commit_hashes(repo_path, max_commits):
     """
     Fetches the commit hashes from the git history in the specified repository.
-    
+
     Args:
     - repo_path (str): The path to the Git repository.
     - max_commits (int): The maximum number of commits to retrieve.
-    
+
     Returns:
     - list: A list of commit hashes.
     """
+    # Fetch the commit hashes from the repository
     command = f"git log --reverse --format='%H' -n {max_commits}"
     output, error = execute_shell_command(command, repo_path)
     if error:
         raise Exception(f"Error fetching commit hashes: {error}")
+
+    # Return the commit hashes as a list
     return output.splitlines()
+
+def select_commits(repo_path, select_count):
+    """
+    Selects a given number of commits (first, last, and evenly spaced middle commits)
+     from the git history.
+
+    Args:
+    - repo_path (str): The path to the Git repository.
+    - select_count (int): The number of commits to select (including first and last).
+
+    Returns:
+    - list: A list of selected commit hashes along with their numbers.
+    """
+    # Get the total number of commits in the repository
+    command = "git rev-list --count HEAD"
+    output, error = execute_shell_command(command, repo_path)
+    if error:
+        raise Exception(f"Error fetching total commit count: {error}")
+
+    max_commits = int(output.strip())
+
+    # If fewer commits are requested than available, adjust the selection count
+    if select_count > max_commits:
+        raise ValueError("Number of selected commits cannot be greater than total commits.")
+
+    # Fetch all commit hashes from the repository
+    commit_hashes = get_commit_hashes(repo_path, max_commits)
+
+    # The list to store selected commit hashes
+    selected_commits = []
+
+    # Always select the first commit
+    selected_commits.append((1, commit_hashes[0]))  # (commit number, commit hash)
+
+    # Always select the last commit
+    selected_commits.append((max_commits, commit_hashes[-1]))  # (commit number, commit hash)
+
+    # For the middle commits, we need to select evenly spaced commits
+    if select_count > 2:
+        middle_commit_count = select_count - 2  # We already have first and last commits
+
+        # Calculate the step size for evenly spaced middle commits
+        step_size = (max_commits - 1) // (select_count - 1)  # This ensures equal spacing
+
+        # Select middle commits based on the step size
+        for i in range(1, middle_commit_count + 1):
+            middle_commit_position = i * step_size
+            middle_commit_position = min(middle_commit_position, max_commits - 1)  # Ensure within bounds
+            selected_commits.append((middle_commit_position + 1, commit_hashes[middle_commit_position]))  # (commit number, commit hash)
+
+    # Sort selected commits in ascending order (commit 1 first, commit 2 second, etc.)
+    selected_commits = sorted(selected_commits, key=lambda x: x[0])
+    return selected_commits
 
 # Function to get commit metadata (date and message)
 def get_commit_metadata(repo_path, commit_hash):
@@ -78,7 +133,7 @@ def count_words_in_readme(commit_hash, script_path, repo_path):
     - commit_hash (str): The commit hash to checkout.
     - script_path (str): The path to the counting script.
     - repo_path (str): The path to the Git repository.
-    
+
     Returns:
     - str: The output of the counting script.
     """
@@ -128,7 +183,7 @@ def checkout_from_detached_commit(current_branch, repo_path):
 def run_on_commit_history(script, repo, max_commits):
     """
     Runs the word-counting script on the specified number of commits in the given Git repository.
-    
+
     Args:
     - script (str): The path to the counting script.
     - repo (str): The path to the Git repository.
@@ -140,10 +195,20 @@ def run_on_commit_history(script, repo, max_commits):
     # Ensure the artefacts directory exists, remove it if it already exists
     if artefacts_path.exists():
         shutil.rmtree(artefacts_path)
-    artefacts_path.mkdir(parents=True)  # Create the artefacts directory
+    # Create the artefacts directory
+    artefacts_path.mkdir(parents=True)
 
-    # Fetch the commit hashes for the specified number of commits
-    commit_hashes = get_commit_hashes(repo_path, max_commits)
+    # Dynamically get the total number of commits and decide how many to select
+    total_commits_command = "git rev-list --count HEAD"
+    output, error = execute_shell_command(total_commits_command, repo_path)
+    if error:
+        raise Exception(f"Error fetching total commit count: {error}")
+
+    total_commits = int(output.strip())
+    print(f"Total commits in the repository: {total_commits}")
+
+    # Select the commits
+    selected_commits = select_commits(repo_path, max_commits)
 
     # Metadata structure to store commit details
     metadata = {
@@ -152,7 +217,7 @@ def run_on_commit_history(script, repo, max_commits):
     }
 
     # Process each commit hash
-    for commit_hash in commit_hashes:
+    for commit_number, commit_hash in selected_commits:
         # Get commit metadata (date and message)
         commit_date, commit_message = get_commit_metadata(repo_path, commit_hash)
         print(f"Processing commit {commit_hash} - {commit_message} ({commit_date})")
@@ -160,10 +225,13 @@ def run_on_commit_history(script, repo, max_commits):
         # Run the word-counting script on the commit's README.md
         try:
             count_output = count_words_in_readme(commit_hash, script, repo_path)
-            errors = None  # No errors if the script runs successfully
+            # Initialize as an empty array if there are no errors
+            errors = []
         except Exception as e:
-            count_output = "cat: README.md: No such file or directory"  # Error message
-            errors = str(e)
+            count_output = "cat: README.md: No such file or directory"
+            # Error message
+            # Store the error in a list
+            errors = [str(e)]
 
         # Store commit metadata (including any errors encountered)
         metadata["commits"][commit_hash] = {
@@ -188,7 +256,7 @@ def run_on_commit_history(script, repo, max_commits):
 if __name__ == "__main__":
     # Create an argument parser
     parser = argparse.ArgumentParser(description='Run a script on Git commit history.')
-    
+
     # Define the arguments the script will accept
     parser.add_argument('--script', type=str, required=True, help='Path to the counting script (e.g., count-words-in-readme.sh)')
     parser.add_argument('--repo', type=str, required=True, help='Path to the Git repository')
