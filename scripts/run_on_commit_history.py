@@ -118,24 +118,17 @@ def get_commit_metadata(repo_path, commit_hash):
     commit_date, commit_message = output.split(" ", 1)
     return commit_date, commit_message.strip()
 
-# Function to run the count words script on the README.md file for a specific commit
-def count_words_in_readme(commit_hash, script_path, repo_path):
+def run_script_on_commits(commit_hash, script_path, repo_path):
     """
-    Runs the given counting script on the README.md file in the repository at a specific commit.
-
-    In this method we are first trying to get current branch of repo.
-    Next we are switching to commit hash. Changes are made
-    to README.md in the in this commit hash are present if we switched to that
-    particular commit hash. Count the words in README.md file and revert back
-    to current branch which we got earlier.
+    Runs the given script on the files in the repository at a specific commit.
 
     Args:
     - commit_hash (str): The commit hash to checkout.
-    - script_path (str): The path to the counting script.
+    - script_path (str): The path to the script.
     - repo_path (str): The path to the Git repository.
 
     Returns:
-    - str: The output of the counting script.
+    - str: The output of the script.
     """
     # Ensure the script is run with the correct absolute path
     script_path = os.path.abspath(script_path)
@@ -152,17 +145,19 @@ def count_words_in_readme(commit_hash, script_path, repo_path):
     if error:
         raise Exception(f"Error checking out commit {commit_hash}: {error}")
 
-    # Run the counting script directly on the current repo state (i.e., in the context of the commit)
+    # Run the script directly on the current repo state (i.e., in the context of the commit)
     command = f"bash {script_path}"
-    countoutput, error = execute_shell_command(command, repo_path)
+    script_output, error = execute_shell_command(command, repo_path)
+
+    # Handle errors during script execution more generically
     if error:
         checkout_from_detached_commit(current_branch, repo_path)
         if error:
             raise Exception(f"Error reverting back to original branch {current_branch.strip()}: {error}")
-        raise Exception(f"Error running counting script on commit {commit_hash}: {error}")
+        raise Exception(f"Error running script on commit {commit_hash}: {error}")
 
     checkout_from_detached_commit(current_branch, repo_path)
-    return countoutput.strip()
+    return script_output.strip()
 
 # Function to checkout to a current branch from detached HEAD state
 def checkout_from_detached_commit(current_branch, repo_path):
@@ -224,11 +219,11 @@ def run_on_commit_history(script, repo, max_commits):
 
         # Run the word-counting script on the commit's README.md
         try:
-            count_output = count_words_in_readme(commit_hash, script, repo_path)
+            count_output = run_script_on_commits(commit_hash, script, repo_path)
             # Initialize as an empty array if there are no errors
             errors = []
         except Exception as e:
-            count_output = "cat: README.md: No such file or directory"
+            count_output = f"Error during script execution: {str(e)}"
             # Error message
             # Store the error in a list
             errors = [str(e)]
